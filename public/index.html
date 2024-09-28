@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app">
+        <button @click="openFilePicker" type="button">open file</button>
+        <div v-for="log in bill_logs">
+            <span>{{ log }}</span>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+          "imports": {
+            "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js"
+          }
+        }
+    </script>
+    <script type="module">
+        import { createApp, ref } from 'vue'
+
+        createApp({
+            setup() {
+                const bill_logs = ref([])
+
+                return {
+                    bill_logs,
+                    async openFilePicker() {
+                        const [file_handle] = await window.showOpenFilePicker()
+                        const file = await file_handle.getFile()
+                        const content = await readFile(file, 'GBK')
+
+                        bill_logs.value = normalizeContent(content)
+                    }
+                }
+            }
+        }).mount('#app')
+
+        function normalizeContent(content) {
+            return content.split('\r\n')
+                .map(i => i.replaceAll(/\s/g, ''))
+                .filter(i => i)
+                .slice(4)
+                .map(i => i.split(','))
+        }
+
+        function readFile(file, encoding) {
+            const { promise: readerPromise, resolve: onReaderLoad } = Promise.withResolvers()
+            const reader = new FileReader()
+
+            reader.addEventListener('load', ({ target: { result } }) => onReaderLoad(result), false)
+            reader.readAsText(file, encoding)
+
+            return readerPromise
+        }
+    </script>
+</body>
+
+
+</html>
